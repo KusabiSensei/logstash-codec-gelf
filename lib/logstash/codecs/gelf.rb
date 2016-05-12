@@ -206,12 +206,6 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       end
     end
 
-    if @custom_fields
-      @custom_fields.each do |field_name, field_value|
-        event["_#{field_name}"] = field_value unless field_name == 'id'
-      end
-    end
-
     # Probe severity array levels
     level = nil
     if @level.is_a?(Array)
@@ -226,6 +220,14 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       level = event.sprintf(@level.to_s)
     end
     m["level"] = (@level_map[level.downcase] || level).to_i
+
+    # copy over all fields not in metadata with '_' prepended.
+    # this handles all custom fields.
+    event.to_hash.each_pair do |k, v|
+      if !ignore_metadata.include? k
+        m["_#{k}"] = v
+      end
+    end
 
     @on_event.call(m, m.to_json)
   end # def encode
