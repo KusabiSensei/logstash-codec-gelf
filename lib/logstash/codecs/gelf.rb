@@ -4,6 +4,7 @@ require "logstash/json"
 require "logstash/namespace"
 require "stringio"
 require "date"
+require "json"
 
 # GELF codec. This is useful if you want to use logstash
 # to output events to graylog2 using for example the
@@ -61,7 +62,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
 
   # Ignore these fields when ship_metadata is set. Typically this lists the
   # fields used in dynamic values for GELF fields.
-  config :ignore_metadata, :validate => :array, :default => [ "@timestamp", "@version", "severity", "host", "source_host", "source_path", "short_message" ]
+  config :ignore_metadata, :validate => :array, :default => [ "@timestamp", "@version", "severity", "host", "source_host", "source_path", "short_message", "message" ]
 
   # The GELF custom field mappings. GELF supports arbitrary attributes as custom
   # fields. This exposes that. Exclude the `_` portion of the field name
@@ -103,7 +104,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       "emergency" => 0, "e" => 0,
     }
     # The version of GELF that we conform to
-    @gelf_version = "1.0"
+    @gelf_version = "1.1"
     @converter = LogStash::Util::Charset.new(@charset)
     @converter.logger = @logger
   end # register
@@ -122,27 +123,36 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
   public
   def encode(event)
     @logger.debug(["encode(event)", event])
-    event["version"] = @gelf_version;
+    # event contains the JSON representation of the event to encode.
+    # While Graylog will allow straight JSON through GELF inputs,
+    # it is not ideal.
+    #
+    # Therefore we will start with a new Hash and build from scratch.
+    # This is the same method that the GELF output plugin does.
 
-    event["short_message"] = event["message"]
+    m = Hash.new
+
+    m["version"] = @gelf_version;
+
+    m["short_message"] = event["message"]
     if event[@short_message]
       v = event[@short_message]
       short_message = (v.is_a?(Array) && v.length == 1) ? v.first : v
       short_message = short_message.to_s
       if !short_message.empty?
-        event["short_message"] = short_message
+        m["short_message"] = short_message
       end
     end
 
-    event["full_message"] = event.sprintf(@full_message)
+    m["full_message"] = event.sprintf(@full_message)
 
-    event["host"] = event.sprintf(@sender)
+    m["host"] = event.sprintf(@sender)
 
     # deprecated fields
-    event["facility"] = event.sprintf(@facility) if @facility
-    event["file"] = event.sprintf(@file) if @file
-    event["line"] = event.sprintf(@line) if @line
-    event["line"] = event["line"].to_i if event["line"].is_a?(String) and event["line"] === /^[\d]+$/
+    m["facility"] = event.sprintf(@facility) if @facility
+    m["file"] = event.sprintf(@file) if @file
+    m["line"] = event.sprintf(@line) if @line
+    m["line"] = event["line"].to_i if event["line"].is_a?(String) and event["line"] === /^[\d]+$/
 
     if @ship_metadata
       event.to_hash.each do |name, value|
@@ -154,15 +164,15 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
         name = "_id" if name == "id"  # "_id" is reserved, so use "__id"
         if !value.nil? and !@ignore_metadata.include?(name)
           if value.is_a?(Array)
-            event["_#{name}"] = value.join(', ')
+            m["_#{name}"] = value.join(', ')
           elsif value.is_a?(Hash)
             value.each do |hash_name, hash_value|
-              event["_#{name}_#{hash_name}"] = hash_value
+              m["_#{name}_#{hash_name}"] = hash_value
             end
           else
             # Non array values should be presented as-is
             # https://logstash.jira.com/browse/LOGSTASH-113
-            event["_#{name}"] = value
+            m["_#{name}"] = value
           end
         end
       end
@@ -176,7 +186,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
           rescue ArgumentError, NoMethodError
             dt = nil
           end
-          event["timestamp"] = dt if !dt.nil?
+          m["timestamp"] = dt if !dt.nil?
         end
       else
         begin
@@ -184,15 +194,15 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
         rescue ArgumentError, NoMethodError
           dt = nil
         end
-        event["timestamp"] = dt if !dt.nil?
+        m["timestamp"] = dt if !dt.nil?
       end
     end
 
     if @ship_tags
       if event["tags"].is_a?(Array)
-        event["_tags"] = event["tags"].join(', ')
+        m["_tags"] = event["tags"].join(', ')
       else
-        event["_tags"] = event["tags"]
+        m["_tags"] = event["tags"]
       end
     end
 
@@ -215,8 +225,8 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
     else
       level = event.sprintf(@level.to_s)
     end
-    event["level"] = (@level_map[level.downcase] || level).to_i
+    m["level"] = (@level_map[level.downcase] || level).to_i
 
-    @on_event.call(event, event.to_json)
+    @on_event.call(m, m.to_json)
   end # def encode
 end # class LogStash::Codecs::Gelf
