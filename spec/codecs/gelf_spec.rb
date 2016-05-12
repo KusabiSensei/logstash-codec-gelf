@@ -1,5 +1,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/codecs/json"
+require "logstash/codecs/gelf"
 require "logstash/event"
 require "logstash/json"
 require "insist"
