@@ -91,15 +91,26 @@ describe LogStash::Codecs::Gelf do
   end
 
   context "#encode" do
-    it "should return json data" do
-      data = {"foo" => "bar", "baz" => {"bah" => ["a","b","c"]}}
+    it "should return a GELF 1.1 spec respecting json message" do
+      # Let's put a syslog formatted message that will come to us, and then we will test for the correct output fields
+      data = {"message" => "dummyuser : command not allowed ; TTY=pts/1 ; PWD=/home/dummyuser/.rvm/gems/jruby-9.0.5.0/gems ; USER=root ; COMMAND=list", "host" => "0:0:0:0:0:0:0:1","facility_label" => "security/authorization" }
       event = LogStash::Event.new(data)
       got_event = false
       subject.on_event do |e, d|
-        insist { d.chomp } == LogStash::Event.new(data).to_json
-        insist { LogStash::Json.load(d)["foo"] } == data["foo"]
-        insist { LogStash::Json.load(d)["baz"] } == data["baz"]
-        insist { LogStash::Json.load(d)["bah"] } == data["bah"]
+	# Current GELF Spec is v1.1
+        insist { LogStash::Json.load(d)["version"] } == "1.1" 
+	insist { LogStash::Json.load(d)["host"] }.is_a? String
+	insist { LogStash::Json.load(d)["host"] } == data["host"]
+	# Make sure we get a numeric timestamp back
+	insist { LogStash::Json.load(d)["timestamp"] }.is_a? BigDecimal 
+	# Thou shalt not use _id under the GELF spec. It should never be set
+	insist { LogStash::Json.load(d)["_id"] }.nil? 
+	# Check a custom field to make sure we get the field name prepended with a _
+	insist { LogStash::Json.load(d)["_facility_label"] } == data["facility_label"] 
+	# Since our test now uses a syslog message, full and short message are the same.
+	# TODO: Eventually we will change this to a multiline message and make sure that full and short messages are per the spec.
+	insist { LogStash::Json.load(d)["full_message"] } == data["message"]
+        insist { LogStash::Json.load(d)["short_message"] } == data["message"]
         got_event = true
       end
       subject.encode(event)
