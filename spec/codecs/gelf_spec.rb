@@ -5,9 +5,9 @@ require "logstash/event"
 require "logstash/json"
 require "insist"
 
-describe LogStash::Codecs::GELF do
+describe LogStash::Codecs::Gelf do
   subject do
-    next LogStash::Codecs::GELF.new
+    next LogStash::Codecs::Gelf.new
   end
 
   context "#decode" do
