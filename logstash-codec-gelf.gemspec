@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.name            = 'logstash-codec-gelf'
   s.version         = '0.1.1'
   s.licenses        = ['Apache License (2.0)']
-  s.summary         = "This codec may be used to encode (via outputs) gelf (procotol 1.0) messages"
+  s.summary         = "This codec may be used to encode (via outputs) gelf (protocol 1.1) messages"
   s.description     = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program"
   s.authors         = ["Elastic"]
   s.email           = 'info@elastic.co'
@@ -22,6 +22,6 @@ Gem::Specification.new do |s|
   # Gem dependencies
   s.add_runtime_dependency "logstash-core", ">= 1.4.0", "< 3.0.0"
 
-  s.add_development_dependency "logstash-devutils", ">= 0.0.19", "< 0.0.20"
-  s.add_development_dependency "logstash-codec-json", ">= 2.1.1", "< 2.1.2"
+  s.add_development_dependency "logstash-devutils", "~> 0.0.22"
+  s.add_development_dependency "logstash-codec-json", "~> 2.1.4"
 end
