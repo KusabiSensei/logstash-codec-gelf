@@ -144,14 +144,14 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       end
     end
 
-    m["full_message"] = event.sprintf(@full_message)
+    m["full_message"] = event["full_message"] if @full_message
 
-    m["host"] = event.sprintf(@sender)
+    m["host"] = event["sender"] if @sender
 
     # deprecated fields
-    m["facility"] = event.sprintf(@facility) if @facility
-    m["file"] = event.sprintf(@file) if @file
-    m["line"] = event.sprintf(@line) if @line
+    m["facility"] = event["facility"] if @facility
+    m["file"] = event["file"] if @file
+    m["line"] = event["line"] if @line
     m["line"] = event["line"].to_i if event["line"].is_a?(String) and event["line"] === /^[\d]+$/
 
     if @ship_metadata
