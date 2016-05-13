@@ -210,14 +210,16 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
     level = nil
     if @level.is_a?(Array)
       @level.each do |value|
-        parsed_value = event.sprintf(value)
-        next if value.count('%{') > 0 and parsed_value == value
-
+        parsed_value = nil
+        event.to_hash.each_value do | v | 
+          parsed_value = v
+          next if value.count('%{') > 0 and parsed_value == value
+          end
         level = parsed_value.to_s
         break
       end
     else
-      level = event.sprintf(@level.to_s)
+      level = event["level"].to_s
     end
     m["level"] = (@level_map[level.downcase] || level).to_i
 
