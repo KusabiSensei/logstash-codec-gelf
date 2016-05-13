@@ -11,8 +11,18 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   # Files
-  s.files = `git ls-files`.split($\)
+  s.files = Array.new
+  s.files << "CHANGELOG.md"
+  s.files << "CONTRIBUTORS"
+  s.files << "Gemfile"
+  s.files << "LICENSE"
+  s.files << "README.md"
+  s.files << "Rakefile"
+  s.files << "lib/logstash/codecs/gelf.rb"
+  s.files << "logstash-codec-gelf.gemspec"
+  s.files << "spec/codecs/gelf_spec.rb"
 
+  
   # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 
