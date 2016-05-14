@@ -1,6 +1,8 @@
-# Logstash Plugin
+# Logstash GELF Codec Plugin
 
 This is a plugin for [Logstash](https://github.com/elasticsearch/logstash).
+
+This implements the GELF 1.1 specification for generating GELF messages to pass to Graylog. It can be used with any output plugin, as this decouples the message encoding from the transport.
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
@@ -21,8 +23,7 @@ Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/log
 
 #### Code
 - To get started, you'll need JRuby with the Bundler gem installed.
-
-- Create a new plugin or clone and existing from the GitHub [logstash-plugins](https://github.com/logstash-plugins) organization. We also provide [example plugins](https://github.com/logstash-plugins?query=example).
+- We highly recommend using rvm or equivalent to give you a clean gemset.
 
 - Install dependencies
 ```sh
@@ -31,13 +32,13 @@ bundle install
 
 #### Test
 
-- Update your dependencies
+- Update your dependencies. Again, we recommend using a clean gemset.
 
 ```sh
 bundle install
 ```
 
-- Run tests
+- Run tests. Also see the `spec/codecs/gelf_spec.rb` file for the test encode messages.
 
 ```sh
 bundle exec rspec
