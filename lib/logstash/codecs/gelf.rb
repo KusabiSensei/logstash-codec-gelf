@@ -143,10 +143,23 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
         m["short_message"] = short_message
       end
     end
+    
+    # So we want to make the full message equal to something sent in that multiline, which it should already have.
+    # If not, we need to set it to the short message.
+    if !event["full_message"].nil?
+      m["full_message"] = event["full_message"]
+    else
+      m["full_message"] = m["short_message"]
+    end
 
-    m["full_message"] = event["full_message"] if @full_message
-
-    m["host"] = event["sender"] if @sender
+    # With the host field, this could be in a few places. If it's in the message,
+    # then we grab that sucker. Also, the user should be using grok to set this
+    # as opposed to making us search for it. Otherwise we use the default sender field.
+    if !event["host"].nil?
+      m["host"] = event["host"]
+    else
+      m["host"] = event["sender"] if @sender
+    end
 
     # deprecated fields
     m["facility"] = event["facility"] if @facility
@@ -182,7 +195,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       if event["timestamp"].nil?
         if !event['@timestamp'].nil?
           begin
-            dt = DateTime.parse(event['@timestamp'].to_iso8601).to_time.to_f
+            dt = DateTime.parse(event['@timestamp']).to_time.to_f
           rescue ArgumentError, NoMethodError
             dt = nil
           end
@@ -190,7 +203,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
         end
       else
         begin
-          dt = DateTime.parse(event["timestamp"].to_iso8601).to_time.to_f
+          dt = DateTime.parse(event["timestamp"]).to_time.to_f
         rescue ArgumentError, NoMethodError
           dt = nil
         end
