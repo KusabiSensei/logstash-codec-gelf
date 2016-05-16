@@ -131,7 +131,7 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
     # This is the same method that the GELF output plugin does.
 
     m = Hash.new
-
+    @logger.warn("The event that we are working with looks like this: #{event}")
     m["version"] = @gelf_version;
 
     m["short_message"] = event["message"]
@@ -219,22 +219,28 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
       end
     end
 
-    # Probe severity array levels
-    level = nil
-    if @level.is_a?(Array)
-      @level.each do |value|
-        parsed_value = nil
-        event.to_hash.each_value do | v | 
-          parsed_value = v
-          next if value.count('%{') > 0 and parsed_value == value
-          end
-        level = parsed_value.to_s
-        break
-      end
-    else
-      level = event["level"].to_s
-    end
-    m["level"] = (@level_map[level.downcase] || level).to_i
+    # So because this is somewhat broken, I'm going to put in a quick and dirty
+    # fix so that this can work with syslog messages.
+    # Better fix to come later on
+    #
+    ## Probe severity array levels
+    #level = nil
+    #if @level.is_a?(Array)
+    #  @level.each do |value|
+    #    parsed_value = nil
+    #    event.to_hash.each_value do | v | 
+    #      parsed_value = v
+    #      next if value.count('%{') > 0 and parsed_value == value
+    #      end
+    #    level = parsed_value.to_s
+    #    break
+    #  end
+    #else
+    #  level = event["level"].to_s
+    #end
+    #m["level"] = (@level_map[level.downcase] || level).to_i
+
+    m["level"] = event["severity"]
 
     # copy over all fields not in metadata with '_' prepended.
     # this handles all custom fields.
