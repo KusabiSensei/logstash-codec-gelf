@@ -131,7 +131,6 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
     # This is the same method that the GELF output plugin does.
 
     m = Hash.new
-    @logger.warn("The event that we are working with looks like this: #{event}")
     m["version"] = @gelf_version;
 
     m["short_message"] = event["message"]
