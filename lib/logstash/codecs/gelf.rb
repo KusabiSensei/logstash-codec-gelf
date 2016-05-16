@@ -243,7 +243,12 @@ class LogStash::Codecs::Gelf < LogStash::Codecs::Base
         m["_#{k}"] = v
       end
     end
+    
+    # Cast this back to LogStash::Event since someone overloads sprintf where they should use to_s 
+    out = LogStash::Event.new m
+    out.remove "@timestamp"
+    out.remove "@version"
 
-    @on_event.call(m, m.to_json)
+    @on_event.call(out, out.to_json)
   end # def encode
 end # class LogStash::Codecs::Gelf
